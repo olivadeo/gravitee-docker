@@ -13,15 +13,28 @@
 FROM graviteeio/java:8
 MAINTAINER Gravitee Team <http://gravitee.io>
 
-ARG GRAVITEEIO_VERSION=0
+#confd 
+RUN mkdir -p /opt/confd/bin
+ADD confd/bin/* /opt/confd/bin
+RUN chmod +x /opt/confd/bin/confd
+
+RUN mkdir -p /etc/confd/{conf.d,templates}
+ADD confd/*.toml /etc/confd/conf.d/
+ADD confd/*.tmpl /etc/confd/templates/
+
+ARG GRAVITEEIO_VERSION=1.12.1
 
 # Update to get support for Zip/Unzip, nc and wget
 RUN apk add --update zip unzip netcat-openbsd wget
 
 RUN wget https://download.gravitee.io/graviteeio-apim/distributions/graviteeio-full-${GRAVITEEIO_VERSION}.zip --no-check-certificate -P /tmp/ \
-    && unzip /tmp/graviteeio-full-${GRAVITEEIO_VERSION}.zip -d /tmp/ \
+   && unzip /tmp/graviteeio-full-${GRAVITEEIO_VERSION}.zip -d /tmp/ \
     && mv /tmp/graviteeio-full-${GRAVITEEIO_VERSION}/graviteeio-gateway* /opt/graviteeio-gateway \
     && rm -rf /tmp/*
+
+ADD setenv.sh . 
+RUN chmod +x setenv.sh
+RUN ./setenv.sh
 
 ENV GRAVITEEIO_HOME /opt/graviteeio-gateway
 WORKDIR ${GRAVITEEIO_HOME}
